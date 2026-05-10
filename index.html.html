@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Very Navy POS | نظام مبيعات</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        :root { --navy: #001f3f; --gold: #d4af37; --white: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; }
+        
+        /* شاشة الدخول */
+        .login-page { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--navy); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-card { background: var(--white); padding: 30px; border-radius: 15px; width: 300px; text-align: center; border-top: 5px solid var(--gold); }
+        .login-card h2 { color: var(--navy); margin-bottom: 20px; }
+        .login-card input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        .btn-login { background: var(--navy); color: var(--gold); width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* النظام الرئيسي */
+        .main-content { display: none; }
+        header { background: var(--navy); color: white; padding: 15px; text-align: center; border-bottom: 3px solid var(--gold); position: sticky; top: 0; }
+        .container { padding: 20px; max-width: 1200px; margin: auto; }
+        
+        .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; }
+        .nav-bar button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background: #ddd; white-space: nowrap; }
+        .nav-bar button.active { background: var(--gold); color: var(--navy); font-weight: bold; }
+
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        input, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; }
+        
+        .btn-confirm { background: #28a745; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; margin-top: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        th { background: var(--navy); color: white; }
+
+        .admin-only { display: none; } /* مخفي عن الموظف */
+
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<div id="loginPage" class="login-page">
+    <div class="login-card">
+        <div style="font-size: 24px; font-weight: bold; color: var(--navy);">VERY NAVY</div>
+        <p>تسجيل الدخول</p>
+        <input type="text" id="userInput" placeholder="اسم المستخدم">
+        <input type="password" id="passInput" placeholder="كلمة المرور">
+        <button class="btn-login" onclick="handleLogin()">دخول</button>
+    </div>
+</div>
+
+<div id="mainApp" class="main-content">
+    <header>
+        <div style="font-size: 22px; font-weight: bold;">VERY NAVY - نظام المبيعات</div>
+        <div id="userRoleTxt" style="font-size: 12px; color: var(--gold);"></div>
+    </header>
+
+    <div class="container">
+        <div class="nav-bar no-print">
+            <button id="saleTabBtn" class="active" onclick="switchPage('salePage')">شاشة البيع</button>
+            <button id="adminTabBtn" class="admin-only" onclick="switchPage('adminPage')">الإدارة والمخزن</button>
+            <button onclick="location.reload()" style="background: #e74c3c; color: white;">خروج</button>
+        </div>
+
+        <div id="salePage" class="page active">
+            <div class="card">
+                <h3>فاتورة جديدة</h3>
+                <div class="grid">
+                    <input type="text" id="barInput" placeholder="باركود (اختياري)" oninput="checkBar(this.value)">
+                    <select id="prodSelect"><option value="">اختر المنتج</option></select>
+                    <input type="number" id="saleQty" value="1" placeholder="الكمية">
+                    <input type="number" id="saleDisc" value="0" placeholder="خصم ج.م">
+                </div>
+                <button class="btn-confirm" onclick="doSale()">تأكيد العملية وطباعة الفاتورة</button>
+            </div>
+        </div>
+
+        <div id="adminPage" class="page admin-only">
+            <div class="card">
+                <h3>إضافة منتج للمخزن</h3>
+                <div class="grid">
+                    <input type="text" id="pBar" placeholder="الباركود">
+                    <input type="text" id="pName" placeholder="اسم القطعة">
+                    <input type="number" id="pPrice" placeholder="سعر البيع">
+                    <button onclick="addProduct()" style="background: var(--navy); color: var(--gold);">حفظ المنتج</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>تقرير المبيعات اليومي</h3>
+                <table id="logTable">
+                    <thead><tr><th>التاريخ</th><th>المنتج</th><th>الكمية</th><th>الصافي</th><th>إجراء</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <h2 id="totalDay" style="text-align: left; color: var(--navy);">الإجمالي: 0 ج.م</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // الإعدادات
+    const STAFF_USER = "1", STAFF_PASS = "1";
+    const ADMIN_USER = "moaz", ADMIN_PASS = "2026"; // غير الباسورد هنا براحتك
+
+    let products = JSON.parse(localStorage.getItem('vn_db_prod')) || [];
+    let sales = JSON.parse(localStorage.getItem('vn_db_sales')) || [];
+
+    function handleLogin() {
+        const u = document.getElementById('userInput').value;
+        const p = document.getElementById('passInput').value;
+
+        if(u === STAFF_USER && p === STAFF_PASS) {
+            startApp('staff');
+        } else if(u === ADMIN_USER && p === ADMIN_PASS) {
+            startApp('admin');
+        } else {
+            alert("بيانات الدخول غير صحيحة");
+        }
+    }
+
+    function startApp(role) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        if(role === 'admin') {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+            document.getElementById('userRoleTxt').innerText = "وضع المدير";
+        } else {
+            document.getElementById('userRoleTxt').innerText = "وضع الموظف (بيع فقط)";
+        }
+        updateUI();
+    }
+
+    function switchPage(pId) {
+        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+        document.getElementById(pId).style.display = 'block';
+        document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active'));
+        if(pId === 'salePage') document.getElementById('saleTabBtn').classList.add('active');
+        else document.getElementById('adminTabBtn').classList.add('active');
+    }
+
+    function addProduct() {
+        const item = { bar: document.getElementById('pBar').value, name: document.getElementById('pName').value, price: document.getElementById('pPrice').value };
+        if(item.name && item.price) {
+            products.push(item);
+            localStorage.setItem('vn_db_prod', JSON.stringify(products));
+            updateUI();
+            alert("تمت الإضافة");
+        }
+    }
+
+    function updateUI() {
+        const sel = document.getElementById('prodSelect');
+        sel.innerHTML = '<option value="">اختر المنتج</option>';
+        products.forEach((p, i) => sel.innerHTML += `<option value="${i}">${p.name}</option>`);
+
+        const tbody = document.querySelector('#logTable tbody');
+        tbody.innerHTML = '';
+        let total = 0;
+        sales.forEach((s, i) => {
+            total += s.final;
+            tbody.innerHTML += `<tr><td>${s.date}</td><td>${s.name}</td><td>${s.qty}</td><td>${s.final}</td><td><button onclick="printInvoice(${i})">فاتورة</button></td></tr>`;
+        });
+        document.getElementById('totalDay').innerText = "إجمالي الخزينة: " + total + " ج.م";
+    }
+
+    function checkBar(v) {
+        const found = products.findIndex(p => p.bar === v);
+        if(found !== -1) { document.getElementById('prodSelect').value = found; document.getElementById('barInput').value = ''; }
+    }
+
+    function doSale() {
+        const i = document.getElementById('prodSelect').value;
+        const q = document.getElementById('saleQty').value;
+        const d = document.getElementById('saleDisc').value;
+        if(i !== "") {
+            const p = products[i];
+            const sale = { date: new Date().toLocaleDateString(), name: p.name, qty: q, final: (p.price * q) - d, disc: d };
+            sales.push(sale);
+            localStorage.setItem('vn_db_sales', JSON.stringify(sales));
+            updateUI();
+            printInvoice(sales.length - 1);
+        }
+    }
+
+    function printInvoice(idx) {
+        const s = sales[idx];
+        const win = window.open('', '', 'width=350,height=600');
+        win.document.write(`
+            <div style="direction:rtl; text-align:center; font-family:Arial; padding:10px;">
+                <h2 style="margin:0;">VERY NAVY</h2>
+                <p style="font-size:12px;">طوسون، المعمورة، الإسكندرية</p>
+                <p style="font-size:11px;">01001269035 - 01001386162</p>
+                <hr>
+                <table style="width:100%; font-size:14px;">
+                    <tr><td>الصنف:</td><td>${s.name}</td></tr>
+                    <tr><td>الكمية:</td><td>${s.qty}</td></tr>
+                    <tr><td>الخصم:</td><td>${s.disc} ج.م</td></tr>
+                    <tr><td><b>الإجمالي:</b></td><td><b>${s.final} ج.م</b></td></tr>
+                </table>
+                <div id="qr" style="display:flex; justify-content:center; margin:10px;"></div>
+                <p style="font-size:11px;">verynavy.com | 10am - 8pm</p>
+                <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
+                <script>new QRCode(document.getElementById("qr"), {text: "http://verynavy.com", width: 60, height: 60}); setTimeout(()=>window.print(), 500);<\/script>
+            </div>
+        `);
+    }
+</script>
+</body>
+</html>
