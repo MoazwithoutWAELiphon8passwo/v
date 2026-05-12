@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Very Navy | Profit System</title>
+    <title>Very Navy | Full System</title>
     <style>
         :root { --navy: #001f3f; --gold: #d4af37; --white: #ffffff; --profit: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; }
@@ -18,17 +18,28 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; border: 1px solid #eee; text-align: center; }
         th { background: #f8f9fa; color: var(--navy); }
-        .btn-save { background: #28a745; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; }
+        .btn-save { background: #28a745; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; }
+        .btn-print { background: var(--navy); color: var(--gold); padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .admin-only { display: none; }
         .login-page { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--navy); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .login-card { background: white; padding: 30px; border-radius: 15px; width: 300px; text-align: center; }
+        
+        /* تنسيق الفاتورة عند الطباعة */
+        @media print {
+            .no-print, .nav-bar, .login-page, header, .import-box, .btn-print, .btn-save, h3 { display: none !important; }
+            body { background: white; }
+            .card { border: none; box-shadow: none; padding: 0; }
+            .print-only { display: block !important; }
+        }
+        .print-only { display: none; }
     </style>
 </head>
 <body>
 
 <div id="loginPage" class="login-page">
     <div class="login-card">
-        <h1 style="color: var(--navy);">VERY NAVY</h1>
+        <h1 style="color: var(--navy); margin-bottom: 5px;">VERY NAVY</h1>
+        <p style="margin-top: 0; color: #666;">نظام المبيعات الذكي</p>
         <input type="text" id="userInput" placeholder="اسم المستخدم">
         <input type="password" id="passInput" placeholder="كلمة المرور">
         <button class="btn-save" style="background:var(--navy); color:var(--gold)" onclick="login()">دخول</button>
@@ -36,13 +47,13 @@
 </div>
 
 <div id="mainApp" style="display:none;">
-    <header>
-        <h2 style="margin:0;">VERY NAVY - إدارة الأرباح</h2>
-        <span id="roleLabel" style="color: var(--gold);"></span>
+    <header class="no-print">
+        <h2 style="margin:0;">VERY NAVY - طوسون</h2>
+        <span id="roleLabel" style="color: var(--gold); font-size: 14px;"></span>
     </header>
 
     <div class="container">
-        <div class="nav-bar">
+        <div class="nav-bar no-print">
             <button id="btnSale" class="active" onclick="showPage('salePage')">🛒 البيع</button>
             <button id="btnInv" class="admin-only" onclick="showPage('invPage')">📦 المخزن</button>
             <button id="btnLogs" class="admin-only" onclick="showPage('logsPage')">💰 الأرباح والتقارير</button>
@@ -51,32 +62,31 @@
 
         <div id="salePage" class="page">
             <div class="card">
-                <h3>فاتورة بيع</h3>
-                <div class="grid">
-                    <input type="text" id="saleBar" placeholder="باركود" oninput="autoAdd(this.value)">
-                    <select id="saleSelect"><option value="">اختر المنتج</option></select>
-                    <input type="number" id="saleQty" value="1">
-                    <input type="number" id="saleDisc" value="0" placeholder="خصم">
+                <h3 class="no-print">فاتورة بيع جديدة</h3>
+                <div class="grid no-print">
+                    <input type="text" id="saleBar" placeholder="باركود القطعة" oninput="autoAdd(this.value)">
+                    <select id="saleSelect"><option value="">اختر المنتج يدوياً</option></select>
+                    <input type="number" id="saleQty" value="1" title="الكمية">
+                    <input type="number" id="saleDisc" value="0" placeholder="خصم (جنيه)">
                 </div>
-                <button class="btn-save" onclick="processSale()">تأكيد العملية</button>
+                <button class="btn-save no-print" onclick="processSale()">تأكيد العملية وطباعة الفاتورة</button>
             </div>
         </div>
 
         <div id="invPage" class="page" style="display:none;">
-            <div class="card" style="background: #e3f2fd;">
+            <div class="card import-box">
                 <h4>📥 استيراد من إكسيل (CSV)</h4>
                 <input type="file" id="csvFile" accept=".csv" onchange="importCSV(this)">
-                <p style="font-size: 11px;">الترتيب: اسم، سعر بيع، سعر شراء، باركود</p>
             </div>
             <div class="card">
-                <h3>إضافة منتج</h3>
+                <h3>إضافة منتج جديد</h3>
                 <div class="grid">
                     <input type="text" id="pName" placeholder="اسم المنتج">
                     <input type="number" id="pSell" placeholder="سعر البيع">
                     <input type="number" id="pBuy" placeholder="سعر الشراء">
                     <input type="text" id="pBar" placeholder="الباركود">
                 </div>
-                <button class="btn-save" onclick="addNewProduct()">حفظ</button>
+                <button class="btn-save" onclick="addNewProduct()">حفظ في المخزن</button>
             </div>
             <div class="card">
                 <table id="prodTable">
@@ -88,35 +98,41 @@
 
         <div id="logsPage" class="page" style="display:none;">
             <div class="card">
-                <h3>تقرير الأرباح اليومي</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center;" class="no-print">
+                    <h3>سجل المبيعات والأرباح</h3>
+                    <button class="btn-print" onclick="window.print()">🖨️ طباعة تقرير اليوم</button>
+                </div>
                 <table id="salesTable">
-                    <thead><tr><th>الوقت</th><th>المنتج</th><th>البيع</th><th>الربح</th></tr></thead>
+                    <thead><tr><th>الوقت</th><th>المنتج</th><th>السعر</th><th>الربح</th></tr></thead>
                     <tbody></tbody>
                 </table>
                 <hr>
-                <h3 id="totalRevenue">إجمالي المبيعات: 0 ج.م</h3>
-                <h2 id="totalProfit" style="color: var(--profit);">صافي الأرباح: 0 ج.م</h2>
+                <div style="text-align: left;">
+                    <p id="totalRevenue">إجمالي المبيعات: 0 ج.م</p>
+                    <h2 id="totalProfit" style="color: var(--profit);">صافي الأرباح: 0 ج.م</h2>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let products = JSON.parse(localStorage.getItem('vn_v8_prods')) || [];
-    let sales = JSON.parse(localStorage.getItem('vn_v8_sales')) || [];
+    let products = JSON.parse(localStorage.getItem('vn_v10_prods')) || [];
+    let sales = JSON.parse(localStorage.getItem('vn_v10_sales')) || [];
 
     function login() {
         const u = document.getElementById('userInput').value;
         const p = document.getElementById('passInput').value;
         if(u === "1" && p === "1") start("staff");
         else if(u === "moaz" && p === "2026") start("admin");
-        else alert("خطأ!");
+        else alert("خطأ في بيانات الدخول!");
     }
 
     function start(role) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         if(role === 'admin') document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+        document.getElementById('roleLabel').innerText = (role === 'admin') ? "وضع المدير" : "وضع الكاشير";
         renderAll();
     }
 
@@ -133,19 +149,8 @@
         if(n && s && b) {
             products.push({name: n, sell: parseFloat(s), buy: parseFloat(b), bar: bar});
             saveData(); renderAll();
+            alert("تمت إضافة " + n + " للمخزن");
         }
-    }
-
-    function importCSV(input) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            e.target.result.split('\n').forEach(row => {
-                const c = row.split(',');
-                if(c.length >= 3) products.push({name: c[0], sell: parseFloat(c[1]), buy: parseFloat(c[2]), bar: c[3]?.trim()});
-            });
-            saveData(); renderAll();
-        };
-        reader.readAsText(input.files[0]);
     }
 
     function processSale() {
@@ -154,10 +159,41 @@
             const p = products[idx];
             const sellPrice = (p.sell * qty) - disc;
             const profit = sellPrice - (p.buy * qty);
-            sales.push({time: new Date().toLocaleTimeString(), name: p.name, total: sellPrice, profit: profit});
+            const time = new Date().toLocaleString('ar-EG');
+            
+            sales.push({time: time, name: p.name, total: sellPrice, profit: profit});
             saveData(); renderAll();
-            alert("تم البيع");
+            
+            // فتح نافذة الطباعة للفاتورة
+            printInvoice(p.name, qty, disc, sellPrice, time);
+        } else {
+            alert("يرجى اختيار منتج أولاً");
         }
+    }
+
+    function printInvoice(name, qty, disc, total, time) {
+        const printWindow = window.open('', '', 'height=600,width=400');
+        printWindow.document.write(`
+            <div style="direction:rtl; text-align:center; font-family:Arial; padding:20px; border:1px solid #000;">
+                <h2 style="margin:0;">VERY NAVY</h2>
+                <p style="font-size:12px; margin:5px 0;">فرع طوسون - الإسكندرية</p>
+                <p style="font-size:11px;">01001269035 | 01001386162</p>
+                <hr style="border-top: 1px dashed #000;">
+                <table style="width:100%; font-size:14px; text-align:right;">
+                    <tr><td>التاريخ:</td><td>${time}</td></tr>
+                    <tr><td>الصنف:</td><td>${name}</td></tr>
+                    <tr><td>الكمية:</td><td>${qty}</td></tr>
+                    <tr><td>الخصم:</td><td>${disc} ج.م</td></tr>
+                    <tr style="font-weight:bold; font-size:18px;"><td>الإجمالي:</td><td>${total} ج.م</td></tr>
+                </table>
+                <hr style="border-top: 1px dashed #000;">
+                <p style="font-size:12px;">شكراً لزيارتكم لـ Very Navy</p>
+                <p style="font-size:10px;">لا يتم الاسترجاع بدون الفاتورة</p>
+            </div>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
     }
 
     function renderAll() {
@@ -167,7 +203,7 @@
 
         const pt = document.querySelector('#prodTable tbody');
         pt.innerHTML = '';
-        products.forEach((p, i) => pt.innerHTML += `<tr><td>${p.name}</td><td>${p.sell}</td><td>${p.buy}</td><td><button onclick="deleteProd(${i})">❌</button></td></tr>`);
+        products.forEach((p, i) => pt.innerHTML += `<tr><td>${p.name}</td><td>${p.sell}</td><td>${p.buy}</td><td><button onclick="deleteProd(${i})" style="color:red; background:none; border:none; cursor:pointer;">❌</button></td></tr>`);
 
         const st = document.querySelector('#salesTable tbody');
         st.innerHTML = '';
@@ -177,8 +213,25 @@
         document.getElementById('totalProfit').innerText = `صافي الأرباح: ${prof} ج.م`;
     }
 
-    function saveData() { localStorage.setItem('vn_v8_prods', JSON.stringify(products)); localStorage.setItem('vn_v8_sales', JSON.stringify(sales)); }
-    function deleteProd(i) { products.splice(i, 1); saveData(); renderAll(); }
+    function importCSV(input) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const rows = e.target.result.split('\n');
+            rows.forEach(row => {
+                const c = row.split(',');
+                if(c.length >= 3) products.push({name: c[0].trim(), sell: parseFloat(c[1]), buy: parseFloat(c[2]), bar: c[3]?.trim() || ""});
+            });
+            saveData(); renderAll();
+            alert("تم استيراد البضاعة بنجاح");
+        };
+        reader.readAsText(input.files[0]);
+    }
+
+    function saveData() { 
+        localStorage.setItem('vn_v10_prods', JSON.stringify(products)); 
+        localStorage.setItem('vn_v10_sales', JSON.stringify(sales)); 
+    }
+    function deleteProd(i) { if(confirm("هل تريد مسح هذا المنتج نهائياً؟")) { products.splice(i, 1); saveData(); renderAll(); } }
     function autoAdd(v) { 
         const f = products.findIndex(p => p.bar === v);
         if(f !== -1) { document.getElementById('saleSelect').value = f; document.getElementById('saleBar').value = ''; }
